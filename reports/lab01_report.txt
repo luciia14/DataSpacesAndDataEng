@@ -1,0 +1,12 @@
+1. Description of Dataset Structure
+The observational dataset used in this laboratory is stored in a standard CSV format. It consists of four primary features: timestamp, object_id, temperature, and velocity. The initial raw file contains a header followed by 5 data records.
+2. Identification of Observed Objects
+Initial data inspection using Python and PowerShell confirmed the presence of several distinct orbital objects. Specifically, the identifiers OBJ-001, OBJ-002, OBJ-003, and OBJ-004 were extracted. Analysis shows that OBJ-001 appears multiple times, suggesting repeated observations of the same target within the timeframe.
+3. Summary of Detected Data Issues
+During the exploration phase, a data quality issue was identified in the temperature column. One record contained the string "INVALID" instead of a floating-point number.
+4. Description of Cleaning Steps
+To ensure the integrity of the OOAIS pipeline, a data cleaning simulation was performed. I implemented a filtering logic to isolate and remove any rows containing non-numeric "INVALID" flags. In the Windows environment, this was achieved by piping the raw content through a string-matching filter, effectively purging the corrupted entry and saving the result into a new, sanitized file.
+5. Explanation of Data Flow
+The data flow within this laboratory follows a structured path from ingestion to processing:Raw Layer: Data is first stored in data/raw/ to maintain an unaltered record of the original observations.Ingestion & Validation: A Python script (load_data.py) reads the raw data to provide a high-level summary of records and unique objects.Processing Layer: The cleaning tools filter the data, moving it from the raw state to data/processed/final.csv, where it is ready for future stages.
+6. Role of the Ingestion Layer
+The ingestion layer serves as the foundation of the OOAIS pipeline. Its primary role is to bridge the gap between external raw data sources and the internal processing environment. By automating the creation of project structures, validating data types, and performing initial cleaning, this layer ensures that all subsequent stages receive consistent, high-quality information.
