@@ -18,7 +18,7 @@ def run_ingestion():
     model_input_output = "data/processed/model_input.csv"
     report_path = "reports/ingestion_summary.txt"
 
-    # --- 1. CARGA ---
+   
     with open(metadata_path, 'r') as f:
         metadata = json.load(f)
     
@@ -29,7 +29,7 @@ def run_ingestion():
         for row in reader:
             rows.append(row)
 
-    # --- 2. VALIDACIÓN DE CONSISTENCIA (P3) ---
+   
     feature_cols = metadata.get('feature_columns', [])
     target_col = metadata.get('target_column', '')
     
@@ -40,11 +40,11 @@ def run_ingestion():
     # Verificar si el target existe
     target_status = "OK" if target_col in dataset_columns else f"MISSING: {target_col}"
 
-    # --- 3. VALIDACIÓN ESTRUCTURAL ---
+    
     col_validation = "OK" if dataset_columns == metadata['columns'] else "MISMATCH"
     record_count_validation = "OK" if len(rows) == metadata['num_records'] else "MISMATCH"
 
-    # --- 4. FILTRADO DE CALIDAD ---
+   
     valid_records = []
     invalid_records = []
     for record in rows:
@@ -53,18 +53,18 @@ def run_ingestion():
         else:
             valid_records.append(record)
 
-    # --- 5. PREPARACIÓN DE MODEL INPUT ---
+   
     model_input_data = []
     for record in valid_records:
         filtered_row = {key: record[key] for key in feature_cols if key in record}
         model_input_data.append(filtered_row)
 
-    # --- 6. GUARDADO DE ARTEFACTOS ---
+    
     save_csv(valid_records, dataset_columns, valid_output)
     save_csv(invalid_records, dataset_columns, invalid_output)
     save_csv(model_input_data, feature_cols, model_input_output)
 
-    # --- 7. GENERACIÓN DEL REPORTE (Task 10) ---
+    
     summary_content = f"""Dataset: {metadata['dataset_name']}
 Records loaded: {len(rows)}
 Expected records: {metadata['num_records']}
