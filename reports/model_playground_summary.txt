@@ -1,0 +1,29 @@
+OOAIS Model Playground Summary
+================================
+
+Input datasets
+--------------
+data/processed/model_features.csv
+data/processed/model_labels.csv
+
+Dataset statistics
+------------------
+Number of samples: 470
+Number of features: 7
+Training samples: 376
+Testing samples: 94
+
+Compared models
+---------------
+- Decision Tree (baseline): 0.9894
+- Random Forest: 0.9894
+- Logistic Regression: 0.9574
+
+Best model
+----------
+Decision Tree (baseline) achieved the highest accuracy: 0.9894
+
+Conclusion
+----------
+The best candidate for further experiments is Decision Tree (baseline),
+because it achieved the highest accuracy on the current test set.

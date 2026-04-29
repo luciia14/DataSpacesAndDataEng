@@ -15,7 +15,7 @@ def prepare_ml_input():
     features_output = "data/processed/model_features.csv"
     labels_output = "data/processed/model_labels.csv"
     
-    # Definición de columnas
+    
     base_numeric_columns = ['temperature', 'velocity', 'altitude', 'signal_strength']
     final_features = [
         'temperature', 'velocity', 'altitude', 'signal_strength',
@@ -30,7 +30,7 @@ def prepare_ml_input():
         print(f"Error: {input_file} not found. Run ingestion first.")
         return
 
-    # --- TASK 1: Loading and Conversion ---
+    # TASK 1: Loading and Conversion
     print("=== ML Input Preparation: Loading and Conversion ===")
     with open(input_file, 'r', encoding='utf-8') as f:
         reader = csv.DictReader(f)
@@ -51,7 +51,7 @@ def prepare_ml_input():
     print(f"Records accepted: {len(accepted_records)}")
     print(f"Records rejected: {rejected_count}")
 
-    # --- TASK 2: Normalization ---
+    # TASK 2: Normalization
     print("\n=== ML Input Preparation: Normalization ===")
     for col in base_numeric_columns:
         values = [r[col] for r in accepted_records]
@@ -64,14 +64,14 @@ def prepare_ml_input():
                 r[col] = 0.0
     print("Normalization completed successfully.")
 
-    # --- TASK 3: Derived Features ---
+    # TASK 3: Derived Features 
     print("\n=== ML Input Preparation: Derived Features ===")
     for r in accepted_records:
         r['temperature_velocity_interaction'] = round(r['temperature'] * r['velocity'], 4)
         r['altitude_signal_ratio'] = round(r['altitude'] / (r['signal_strength'] + 0.0001), 4)
     print("New features added: interaction and ratio.")
 
-    # --- TASK 4: Temporal Features ---
+    # TASK 4: Temporal Features 
     print("\n=== ML Input Preparation: Temporal Features ===")
     for r in accepted_records:
         dt = datetime.fromisoformat(r['timestamp'])
@@ -81,7 +81,7 @@ def prepare_ml_input():
     print("\nExample record (extended):")
     print(json.dumps(accepted_records[0], indent=2))
 
-    # --- TASK 5: Feature Selection ---
+    # TASK 5: Feature Selection 
     print("\n=== ML Input Preparation: Feature Selection ===")
     feature_dataset = []
     label_dataset = []
@@ -101,7 +101,7 @@ def prepare_ml_input():
     print("\nExample record (final):")
     print(json.dumps(feature_dataset[0], indent=2))
 
-    # --- TASK 6: Saving Outputs ---
+    # TASK 6: Saving Outputs 
     print("\n=== ML Input Preparation: Saving Outputs ===")
     save_csv(feature_dataset, final_features, features_output)
     save_csv(label_dataset, ['anomaly_flag'], labels_output)
