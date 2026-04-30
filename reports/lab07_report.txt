@@ -1,0 +1,27 @@
+How is an image converted into numbers?A digital image is a grid of pixels. Each pixel contains three color channels (Red, Green, Blue). To make the model understand it, we extract these numerical values (0-255), normalize them to a 0-1 range (to help the math converge faster), and "flatten" them into a one-dimensional vector. In your case, a $64 \times 64$ pixel image becomes a list of 12,288 numbers.
+
+What does the model actually “see”?The model does not "see" shapes, textures, or landscapes like humans do. It only sees statistical patterns and correlations within a matrix of numbers. It looks for which combinations of numerical values at specific positions in the vector are typically associated with the labels "forest," "river," or "residential."
+
+Why can the model classify random or unknown images as one of the known classes?
+These models are closed systems. They are only allowed to output the labels you defined during training. When presented with random noise or a "Highway" image, the model performs its mathematical calculation and assigns the class with the highest probability score, even if that score is logically meaningless.
+
+Why can this behavior be dangerous in real AI systems?
+In critical applications (such as medical diagnosis or autonomous vehicles), a confident misclassification can lead to disasters. If a satellite model detects smoke but forces it into the "cloud" category because it wasn't trained on "fire," vital emergency response time would be lost.
+
+What would need to be improved before using such a system operationally?
+One would need to include an "Unknown/Other" class, train on a much larger and more diverse dataset, and use more advanced architectures like Convolutional Neural Networks (CNNs), which are designed to recognize spatial features and shapes rather than just flat vectors of pixels.
+
+Which model achieved the highest accuracy?
+Random Forest reached the highest accuracy at 86.11%.
+
+Which model was fastest to train?
+KNN (0.0039 s)
+
+Did the fastest model also achieve the best accuracy?
+No.
+
+Did all models classify the same image in the same way? 
+In my case yes.
+
+What does the accuracy vs. training time plot show?
+The Efficiency Frontier.
