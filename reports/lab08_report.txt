@@ -1,0 +1,34 @@
+
+
+1. What is the difference between a flattened image vector and an image tensor?
+   * A flattened image vector is a long 1D list of pixel values where all spatial relationships (which pixel is next to which) are lost.
+   * An image tensor is a multi-dimensional array (e.g., 64x64x3) that preserves the 2D structure and color channels, allowing the model to see shapes and patterns.
+
+2. What does a PyTorch Dataset do?
+   * It acts as a data manager that links your local files to the code.
+   * It handles the loading of images and pairs them with their correct numerical labels (e.g., Forest = 0, River = 1).
+
+3. What does a DataLoader do?
+   * It organizes the dataset into batches (small groups of images) so the computer doesn't run out of memory.
+   * It shuffles the data during training to ensure the model doesn't just memorize the order of the images in the folder.
+
+4. Why are CNNs useful for image data?
+   * CNNs use convolutional layers that act as automatic filters to detect visual features like edges, textures, and complex shapes.
+   * Unlike classical ML, they are translation invariant, meaning they can recognize a "river" regardless of where it appears in the frame.
+
+5. What does the model output before the final class is selected?
+   * The model outputs a vector of raw numerical values called "logits".
+   * Each value represents the "strength" or "confidence" of the model for a specific class before the final decision is made by the output layer.
+
+6. Why can the model classify random or unknown images as one of the known classes?
+   * The model is a "closed-set classifier"; its final layer is mathematically forced to distribute its prediction among the classes it was specifically trained on.
+   * It lacks an "I don't know" or "None" category, so it simply picks the class that gets the highest relative score, even if that score is objectively low.
+
+7. Why can this behavior be dangerous in real orbital AI systems?
+   * A satellite could misinterpret a sensor glitch, a cloud, or an unknown geological phenomenon as a known feature (like a "residential area").
+   * This leads to false positives that could trigger expensive or dangerous automated actions based on non-existent information.
+
+8. What would need to be improved before using such a model operationally?
+   * Implementing an uncertainty threshold (Reject Option) so the model remains silent if its confidence is below a certain level.
+   * Training with an "Other/Unknown" class to help the model distinguish between your target classes and the rest of the world.
+   * Expanding Data Augmentation to include atmospheric effects like clouds, haze, or different lighting conditions to simulate real-world orbital environments.

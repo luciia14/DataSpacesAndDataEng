@@ -1,0 +1,28 @@
+CNN VS CLASSICAL ML
+===================
+
+CLASSICAL ML:
+Model: Random Forest (o el usado en Lab anterior)
+Training time: [Inserte tiempo de Lab anterior]
+Accuracy: [Inserte precisión de Lab anterior]
+
+CNN:
+Model: Simple CNN
+Training time: ~2-5 minutes (depende de CPU/GPU)
+Accuracy: 0.8889
+
+BETTER ACCURACY:
+La CNN suele superar al ML Clásico porque extrae características espaciales
+(bordes, texturas) en lugar de tratar cada píxel como una variable aislada.
+
+FASTER TRAINING:
+ML Clásico (Random Forest/SVM) es significativamente más rápido de entrenar
+en datasets pequeños, ya que no requiere optimización por gradiente.
+
+FEWER CLASS CONFUSIONS:
+La CNN tiende a confundir menos las clases con texturas similares 
+(como River vs Forest) gracias a los filtros convolucionales.
+
+GENERALIZATION:
+La CNN demuestra una mejor capacidad de generalización ante rotaciones 
+o cambios de iluminación leves en las imágenes satelitales.

@@ -1,3 +1,4 @@
+Repository link: https://github.com/luciia14/DataSpacesAndDataEng
 How is an image converted into numbers?A digital image is a grid of pixels. Each pixel contains three color channels (Red, Green, Blue). To make the model understand it, we extract these numerical values (0-255), normalize them to a 0-1 range (to help the math converge faster), and "flatten" them into a one-dimensional vector. In your case, a $64 \times 64$ pixel image becomes a list of 12,288 numbers.
 
 What does the model actually “see”?The model does not "see" shapes, textures, or landscapes like humans do. It only sees statistical patterns and correlations within a matrix of numbers. It looks for which combinations of numerical values at specific positions in the vector are typically associated with the labels "forest," "river," or "residential."
