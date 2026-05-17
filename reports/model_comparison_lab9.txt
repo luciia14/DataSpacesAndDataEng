@@ -1,0 +1,26 @@
+MODEL COMPARISON
+================
+1. SimpleCNN from scratch
+Accuracy: 0.8889
+Training time: 1.42 s
+Comments: This custom model is extremely fast because it has very few layers, but it yields the lowest accuracy. It struggles to learn robust visual patterns from scratch due to the limited size of the training dataset.
+
+2. ResNet18 frozen feature extractor
+Accuracy: 1.0000
+Training time: 24.66 seconds
+Comments: By leveraging deep visual features pre-trained on ImageNet, this model achieves perfect accuracy. It is highly efficient because it freezes all convolutional layers and only trains 1,539 parameters in the final classifier head.
+
+3. ResNet18 fine-tuned last block
+Accuracy: 1.0000
+Training time: 35.64 seconds
+Comments: Unfreezing 'layer4' exposes over 8 million parameters to training. While it still achieves perfect accuracy, the training time increases by roughly 44% compared to the frozen model, offering no performance advantage for this specific subset.
+
+
+BEST ACCURACY:
+ResNet18 (both Frozen Feature Extractor and Fine-tuned Last Block) achieved the best accuracy with a perfect score of 1.0000 (100%).
+
+FASTEST TRAINING:
+SimpleCNN from scratch was the fastest model, completing its training in just 1.42 seconds due to its minimal architecture. 
+
+BEST ENGINEERING TRADE-OFF:
+ResNet18 Frozen Feature Extractor represents the best engineering trade-off. It delivers maximum accuracy (1.0000) while saving significant computational resources, training 30% faster than the fine-tuned version and eliminating the risk of overfitting on a small dataset.

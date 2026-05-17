@@ -1,0 +1,35 @@
+1. Did fine-tuning improve accuracy?
+   Yes, fine-tuning typically improves accuracy (often reaching 100% or very close to it). 
+   By unfreezing 'layer4', the model can adapt its high-level feature detectors specifically 
+   to satellite imagery textures, which differ significantly from ImageNet's everyday objects.
+
+2. Did training become slower?
+   Yes. In the frozen version, we only updated ~1,500 parameters (the 'fc' layer). 
+   By unfreezing 'layer4', we are now updating over 8 million parameters. This increases 
+   the computational load per epoch and the time spent on backpropagation.
+
+3. Did the confusion matrix change?
+   Usually, it shows fewer misclassifications between visually similar classes (like 
+   'River' vs 'Forest'). The 'diagonal' of the matrix becomes stronger as the 
+   model gains more confidence in its predictions.
+
+4. Did any class improve more than others?
+   Classes with complex textures or subtle differences (like 'River' and 'Forest' in 
+   satellite view) tend to show the most improvement because the model can now 
+   refine its filters to distinguish those specific green/blue patterns.
+
+5. Did any class become worse?
+   In very small datasets, sometimes performance can slightly drop due to 'overfitting'. 
+   If 'layer4' adapts too much to the training photos, it might lose the ability 
+   to generalize to new images, though this is rare with pre-trained models.
+
+6. Is fine-tuning worth the additional computational cost?
+   Yes, provided you have a GPU or a reasonably fast CPU. The jump in accuracy and 
+   the ability to handle specific data domains (like remote sensing) usually 
+   outweighs the extra seconds of training time.
+
+7. Would you use the frozen model or the fine-tuned model in a small-data problem?
+   For a 'small-data' problem, I would prefer the FROZEN model or only fine-tuning 
+   the very last layer. Fine-tuning too many layers (like 'layer4') on a tiny 
+   dataset increases the risk of overfitting, where the model memorizes the data 
+   instead of learning it.

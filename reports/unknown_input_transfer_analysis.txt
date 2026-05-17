@@ -1,0 +1,24 @@
+TASK 18: UNKNOWN INPUTS ANALYSIS (NOISE IMAGE)
+==============================================
+
+• Does the transfer model also force a known class prediction?
+  Yes. Since the model only knows 3 classes ('forest', 'residential', 'river'), 
+  it is mathematically forced to pick one of them. It cannot say "this is noise" 
+  or "I don't know", so it forced the noise to be a 'river'.
+
+• Does it give high confidence on unknown input?
+  No, it gave a low confidence of 42.24%. This shows the model is highly 
+  confused by the noise. However, because it must choose a winner, 42.24% 
+  was simply the highest score among its 3 limited options.
+
+• Is transfer learning enough to solve out-of-distribution (OOD) detection?
+  No. Transfer learning only helps the model recognize new objects faster. 
+  It does not teach the model how to detect or reject strange, invalid images 
+  like random noise or a highway.
+
+• What additional mechanism would be needed in an operational system?
+  To fix this in a real-world system, you would need:
+  1. A minimum confidence rule: Reject any prediction that does not reach 
+     a safe percentage (for example, ignore everything below 75% confidence).
+  2. An anomaly filter: A separate script that checks if the input is actually 
+     a proper satellite photo before giving it to the neural network.

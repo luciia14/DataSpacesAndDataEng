@@ -1,0 +1,74 @@
+Repository link: https://github.com/luciia14/DataSpacesAndDataEng
+======================================================================
+CONCEPTUAL QUESTIONS: TRANSFER LEARNING & DEEP LEARNING PRINCIPLES
+======================================================================
+
+• What is transfer learning?
+----------------------------
+It is the process of reusing a model developed for one task as the starting 
+point for a model on a second, different task. Instead of training a neural 
+network from scratch, you take the knowledge (weights and biases) that a 
+large network has already acquired and apply it to your custom problem. 
+It dramatically cuts down data requirements and computational overhead.
+
+• What is a pretrained model?
+-----------------------------
+A pretrained model is a saved network that was previously trained on a 
+massive, benchmark dataset (most commonly ImageNet, which contains over 14 
+million natural images). Because it has processed millions of samples, its 
+hidden layers are already expert feature extractors, capable of identifying 
+edges, gradients, textures, and complex shapes.
+
+• What does it mean to freeze layers?
+-------------------------------------
+Freezing layers means setting their weights and parameters to be static 
+and unchangeable during backpropagation (e.g., setting 'requires_grad = False' 
+in PyTorch). This ensures that the core feature extraction capabilities 
+inherited from the pretrained model remain perfectly intact, protecting them 
+from being distorted or destroyed by your small dataset.
+
+• What does it mean to replace the classifier head?
+---------------------------------------------------
+Pretrained architectures (like ResNet18) are natively capped with a final 
+fully connected linear layer ('fc') mapped to 1,000 distinct classes. To adapt 
+the network to a new task, you slice off this 1,000-output layer and replace 
+it with a brand-new, randomly initialized linear layer configured with 
+the exact number of target outputs needed for your current domain (e.g., 3 
+classes for 'forest', 'residential', and 'river').
+
+• What is fine-tuning?
+----------------------
+Fine-tuning is a strategy where you unfreeze all or a specific portion of 
+the inherited convolutional layers (such as 'layer4' in ResNet18) alongside 
+the new classifier head. You then retrain the network using an extremely 
+low learning rate. This allows the deeper, abstract filters to subtly adapt 
+their weights to fit the unique, hyper-specific textures of your new dataset.
+
+• Which approach worked best: SimpleCNN, frozen ResNet18 or fine-tuned ResNet18?
+---------------------------------------------------------------------------------
+The ResNet18 with a Frozen Feature Extractor delivered the optimal engineering 
+performance. It achieved an outstanding Test Accuracy of 97.22% under complex 
+Data Augmentation constraints, requiring a mere 23.55 seconds of CPU training. 
+SimpleCNN struggled to generalize the altered structural shapes (dropping to 
+86.11%), while full fine-tuning increased computational runtime and posed 
+massive overfitting vulnerabilities.
+
+• What are the engineering trade-offs between accuracy, training time and model complexity?
+--------------------------------------------------------------------------------------------
+1. SimpleCNN: Low structural complexity, low computing cost per epoch, but 
+   poor accuracy convergence under data augmentation since it lacks pre-trained visual foundations.
+2. ResNet18 Frozen: High accuracy, ultra-low training time (only 1,539 trainable 
+   parameters), and predictable implementation complexity. It represents the 
+   ideal prototype equilibrium.
+3. ResNet18 Fine-tuned: Maximum performance potential, but carries high 
+   computational overhead (backpropagating across 11M+ weights) and a massive 
+   risk of overfitting if the input data pool is narrow.
+
+• Would you use transfer learning in an operational Earth Observation system? Why?
+
+Yes, absolutely. In practical Earth Observation pipelines, labeled satellite 
+scenes are highly labor-intensive and expensive to acquire. Transfer learning 
+bypasses the data-scarcity bottleneck, ensuring exceptional accuracy with 
+only 100-300 images per class. Additionally, the near-instant training 
+footprint slashes cloud infrastructure budgets and accelerates continuous 
+integration, deployment, and updating cycles (CI/CD) in production.

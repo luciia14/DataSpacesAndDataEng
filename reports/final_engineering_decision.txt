@@ -1,0 +1,37 @@
+FINAL ENGINEERING DECISION: EARTH OBSERVATION PROTOTYPE SYSTEM
+================================================================
+
+1. SELECTED MODEL
+-----------------
+The selected architecture for the prototype Earth Observation system is:
+ResNet18 with Frozen Feature Extractor (Transfer Learning).
+
+2. TECHNICAL JUSTIFICATION
+--------------------------
+Our experimental matrix across Laboratory 8 and Laboratory 9 provides empirical proof that the ResNet18 Frozen Feature Extractor strikes the absolute best engineering trade-off for this specific satellite imagery application:
+
+• Classification Accuracy: This model achieved a Test Accuracy of 97.22% under demanding Data Augmentation conditions, completely outclassing the SimpleCNN (86.11%).
+• Training Time: It is computationally efficient, training in only 23.55 seconds on CPU. This is because it leaves the deep feature extraction layers frozen
+• Suitability for Small Datasets: Deep learning models trained from scratch require immense amounts of data to generalize. By utilizing weights pre-trained on ImageNet, the ResNet18 Frozen model already understands visual primitives, allowing it to work flawlessly even with restricted dataset limits (e.g., 100 to 300 images per class).
+• Risk of Overfitting: Because over 11 million parameters are fully frozen, the capacity of the model to memorize the small training set is mathematically restricted. This guarantees high stability and prevents catastrophic overfitting, unlike the Fine-Tuning approach which updates all 11+ million weights and risks distorting foundational feature extractors on minimal data.
+• Implementation Complexity: Low. It relies on standard PyTorch architecture calls, requires no custom layer sizing or intricate weight initialization from scratch, and integrates naturally with Torchvision's standard normalization pipeline.
+
+3. EXPECTED ADVANTAGES
+----------------------
+• Data Efficiency: High classification performance is unlocked instantly without requiring the collection, cleaning, and manual labeling of tens of thousands of satellite scenes.
+• Instant Prototyping Loops: Due to the 23.55-second training turnaround, engineers can test dataset adjustments, expansion to new classes, or hyperparameter updates almost instantaneously without expensive GPU cluster infrastructure.
+• Structural Integrity: Freezing the layers guarantees that the abstract semantic features learned from millions of diverse real-world images remain intact, providing predictable behavior across standard test patterns.
+
+4. POSSIBLE RISKS
+-----------------
+• Overconfidence in Unknown Inputs (Out-of-Distribution Data): As verified in Task 18, when presented with completely foreign imagery (such as a 'Highway' or random background 'Noise'), the model experiences the flaws of the "closed-world assumption." It is mathematically forced to distribute probabilities only among its known labels, falsely categorizing random noise as a 'river' with a 42.24% probability. In an operational setting, this can lead to silent failures.
+• Domain Shift: ImageNet consists mostly of ground-level consumer objects (dogs, cars, household items), whereas Earth Observation data features top-down, multi-spectral nadir perspectives. While the frozen features generalize exceptionally well to our current 3 classes, highly unique satellite phenomena might hit an abstract bottleneck that frozen layers cannot perfectly represent.
+
+5. DEPLOYMENT & OPERATIONAL RELIABILITY CONSIDERATIONS
+------------------------------------------------------
+To safely transition this prototype into an operational system and mitigate the identified risks, the following production mechanisms must be implemented:
+
+• Minimum Confidence Thresholding (Prediction Rejection Filter): An explicit software gate must be introduced post-inference. Any prediction where the Softmax probability falls below 0.75 or 0.80 must be automatically rejected and flagged as "Unknown/Unreliable" instead of allowing a forced false classification.
+• Input Pre-Screening / Anomaly Filter: Prior to passing an image to the ResNet18 model, a lightweight structural check (such as a basic variance filter or an Autoencoder) should verify that the incoming data is indeed a structured satellite image and not corrupted white noise or sensor artifacts.
+• Standardized Input Normalization: The production inference pipeline must strictly enforce ImageNet channel statistics (mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]) during resizing. Skipping this step distorts the frozen layer activations and degrades operational reliability.
+• Phased Fine-Tuning Strategy for Scale: If the dataset scales up drastically in the future and includes complex sub-classes, the architecture can easily be converted to a Fine-Tuned approach, unfreezing layer4 to adapt specifically to specialized geographic structures while maintaining the baseline prototype logic.
