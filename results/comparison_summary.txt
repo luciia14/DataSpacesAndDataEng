@@ -1,0 +1,6 @@
+Model                | Accuracy   | Train Time
+---------------------------------------------
+Random Forest        | 0.8611     | 0.2417    s
+KNN                  | 0.6944     | 0.0020    s
+Logistic Regression  | 0.7778     | 4.4390    s
+SVM                  | 0.7778     | 0.9762    s
