@@ -4,11 +4,12 @@ import torch
 from torch import nn
 from torch.utils.data import DataLoader
 from torchvision import transforms, models
-from sklearn.metrics import accuracy_score, confusion_matrix, ConfusionMatrixDisplay
+from sklearn.metrics import accuracy_score
+from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
 import matplotlib.pyplot as plt
 from src.vision.image_dataset import EuroSATDataset
 
-# Configuración
+# Task 4: Configuration
 TRAIN_DIR = Path("data/processed/images/train")
 TEST_DIR = Path("data/processed/images/test")
 BATCH_SIZE = 16
@@ -19,21 +20,13 @@ CLASS_NAMES_PATH = Path("models/resnet18_classes.txt")
 REPORT_PATH = Path("reports/transfer_learning_report.txt")
 CONFUSION_MATRIX_PATH = Path("reports/transfer_confusion_matrix.png")
 
-def get_device():
-    if torch.cuda.is_available():
-        return torch.device("cuda")
-    return torch.device("cpu")
-
+# Task 5: Create DataLoaders for ResNet18
 def create_dataloaders():
     transform = transforms.Compose([
         transforms.Resize((224, 224)),
-        transforms.ToTensor(),
-        transforms.Normalize(
-            mean=[0.485, 0.456, 0.406],
-            std=[0.229, 0.224, 0.225]
-        )
+        transforms.ToTensor()
     ])
-
+    
     train_dataset = EuroSATDataset(
         root_dir=TRAIN_DIR,
         transform=transform
@@ -42,7 +35,7 @@ def create_dataloaders():
         root_dir=TEST_DIR,
         transform=transform
     )
-
+    
     train_loader = DataLoader(
         train_dataset,
         batch_size=BATCH_SIZE,
@@ -53,39 +46,60 @@ def create_dataloaders():
         batch_size=BATCH_SIZE,
         shuffle=False
     )
-
+    
+    print("=== Transfer Learning DataLoader ===")
+    print(f"Training samples: {len(train_dataset)}")
+    print(f"Testing samples: {len(test_dataset)}")
+    print(f"Classes: {train_dataset.class_names}")
+    print(f"Class mapping: {train_dataset.class_to_index}")
+    
+    images, labels = next(iter(train_loader))
+    print(f"Batch image shape: {images.shape}")
+    print(f"Batch label shape: {labels.shape}")
+    
     return train_loader, test_loader, train_dataset.class_names
 
+# Task 6: Select Device
+def get_device():
+    if torch.cuda.is_available():
+        return torch.device("cuda")
+    return torch.device("cpu")
+
+# Tasks 7, 8 & 9: Load Pretrained ResNet18, Freeze Extractor and Replace Head
 def create_transfer_model(num_classes):
-    # Cargar ResNet18 con pesos pre-entrenados
+    # Task 7: Download and load ResNet18 weights
     model = models.resnet18(
         weights=models.ResNet18_Weights.DEFAULT
     )
     
-    # Task 8: Freeze Feature Extractor
+    # Task 8: Freeze all backbone feature extractor layers
     for parameter in model.parameters():
         parameter.requires_grad = False
-    
-    # Task 9: Replace the Classifier Head
+        
+    # Task 9: Replace the classifier head for custom output target count
     input_features = model.fc.in_features
     model.fc = nn.Linear(
         input_features,
         num_classes
     )
-    
     return model
+
+# Task 9.1: Inspect Trainable Parameters
 def print_trainable_parameters(model):
     print("=== Trainable Parameters ===")
     trainable_count = 0
     total_count = 0
+    
     for name, parameter in model.named_parameters():
         total_count += parameter.numel()
         if parameter.requires_grad:
             trainable_count += parameter.numel()
             print(name)
+            
     print(f"Trainable parameters: {trainable_count}")
     print(f"Total parameters: {total_count}")
 
+# Task 10: Train the Classifier Head
 def train_model(model, train_loader, device):
     loss_function = nn.CrossEntropyLoss()
     optimizer = torch.optim.Adam(
@@ -116,9 +130,9 @@ def train_model(model, train_loader, device):
     end_time = time.time()
     training_time = end_time - start_time
     print(f"Training time: {training_time:.2f} seconds")
-    
     return training_time
 
+# Task 11: Evaluate the Model
 def evaluate_model(model, test_loader, device, class_names):
     model.eval()
     all_labels = []
@@ -154,7 +168,6 @@ def evaluate_model(model, test_loader, device, class_names):
         display_labels=class_names
     )
     
-    # Asegura que la carpeta reports/ existe
     CONFUSION_MATRIX_PATH.parent.mkdir(
         parents=True,
         exist_ok=True
@@ -165,31 +178,37 @@ def evaluate_model(model, test_loader, device, class_names):
     plt.tight_layout()
     plt.savefig(CONFUSION_MATRIX_PATH)
     plt.close()
-    
     print(f"Saved confusion matrix: {CONFUSION_MATRIX_PATH}")
     
     return accuracy, all_labels, all_predictions
+
+# Task 12: Save Model and Class Names
 def save_model(model, class_names):
     MODEL_PATH.parent.mkdir(
         parents=True,
         exist_ok=True
     )
+    
     torch.save(
         model.state_dict(),
         MODEL_PATH
     )
+    
     with open(CLASS_NAMES_PATH, "w") as f:
         for class_name in class_names:
             f.write(class_name + "\n")
+            
     print("=== Saving Transfer Model ===")
     print(f"Saved model: {MODEL_PATH}")
     print(f"Saved classes: {CLASS_NAMES_PATH}")
 
+# Task 13: Save Training Report
 def save_report(accuracy, training_time, class_names):
     REPORT_PATH.parent.mkdir(
-        parents=True, 
+        parents=True,
         exist_ok=True
     )
+    
     with open(REPORT_PATH, "w") as f:
         f.write("TRANSFER LEARNING REPORT\n")
         f.write("========================\n\n")
@@ -208,33 +227,25 @@ def save_report(accuracy, training_time, class_names):
         )
     print(f"Saved report: {REPORT_PATH}")
 
+# Task 14: Main Function
 def main():
-    # 1. Preparar datos y obtener nombres de clases
     train_loader, test_loader, class_names = create_dataloaders()
-    
-    # 2. Configurar el dispositivo (CPU o GPU)
     device = get_device()
     print(f"Using device: {device}")
     
-    # 3. Crear el modelo de Transfer Learning
     model = create_transfer_model(
         num_classes=len(class_names)
     )
     
-    # 4. Verificar qué parámetros se van a entrenar (Task 8 & 9)
     print_trainable_parameters(model)
-    
-    # 5. Mover el modelo al dispositivo configurado
     model = model.to(device)
     
-    # 6. Entrenar la "cabeza" del clasificador (Task 10)
     training_time = train_model(
-        model, 
-        train_loader, 
+        model,
+        train_loader,
         device
     )
     
-    # 7. Evaluar el rendimiento y generar matriz de confusión
     accuracy, all_labels, all_predictions = evaluate_model(
         model,
         test_loader,
@@ -242,13 +253,11 @@ def main():
         class_names
     )
     
-    # 8. Guardar los pesos del modelo y las etiquetas
     save_model(
-        model, 
+        model,
         class_names
     )
     
-    # 9. Generar el informe final en formato .txt
     save_report(
         accuracy,
         training_time,

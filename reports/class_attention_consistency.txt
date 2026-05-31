@@ -1,0 +1,14 @@
+CLASS ATTENTION CONSISTENCY REPORT
+==================================
+
+- Does the model consistently focus on similar regions?
+  Yes, within the same class, the model is quite consistent at targeting the same type of visual primitives. For instance, in residential images, it always searches for high-contrast straight lines and geometric shapes (roofs and roads), regardless of where they are positioned in the frame.
+
+- Does attention vary significantly?
+  It varies depending on the specific landscape layout of each individual image, but not in its core logic. The attention maps shift spatially to track where the target objects move, but the underlying texture or feature type the network is looking for remains uniform.
+
+- Which class produces the most stable attention patterns?
+  The 'residential' class produces the most stable and predictable attention patterns. Because urban structures have very sharp, high-contrast edges and concrete geometries, the pre-trained ResNet18 feature extractor hooks onto them immediately with high confidence and minimal spatial bleeding.
+
+- Which class appears more difficult?
+  The 'river' class appears to be the most difficult for the model. Unlike roads or roofs, rivers change direction arbitrarily, vary in width, and their color can merge with the surrounding vegetation or mud banks. This causes the Grad-CAM maps for rivers to look more diffuse, sometimes bleeding heavily into the shores or adjacent trees, which explains why its confidence scores are generally lower compared to the other classes.

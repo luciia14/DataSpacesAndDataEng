@@ -1,0 +1,20 @@
+COMPARATIVE ANALYSIS: GRAD-CAM VS OCCLUSION SENSITIVITY
+========================================================
+
+- Do both methods highlight similar regions?
+  Yes, for the most part they agree. Both Grad-CAM and the occlusion map place their peak intensity (the dark red core) right around the center-right section of the satellite patch. This shows that even though their underlying math is completely different, both techniques point to the exact same general area as the key driver for the model's classification.
+
+- Which explanation appears more localized?
+  Grad-CAM is definitely much more localized and sharp. The heatmap it generates forms a clean, continuous shape that closely hugs the boundary line in the image. On the other hand, the occlusion sensitivity map is far more diffuse, creating a wider hot-spot block that bleeds upward to the right and downward through the center.
+
+- Which explanation appears easier to interpret?
+  Grad-CAM is much easier to read at a glance. Because it pulls data straight from the gradients of the very last convolutional layer, it produces a smooth heatmap that makes immediate sense when looking at the original photo. The occlusion map looks blocky and pixelated because its visual resolution is completely bottlenecked by the 32x32 patch size and the 16-pixel stride used to scan the image.
+
+- Did both methods identify the river region?
+  Yes, both successfully locked onto the river context. In the Grad-CAM image, the strongest activation sits right on the diagonal transition where the dark river water meets the land. The occlusion map tells the same story: the dark red squares—where the network's confidence plummets if you block them out—line up exactly with that same intersection. This proves the model relies on that specific visual boundary to know it is looking at a river.
+
+- What happens for unknown inputs?
+  This is where the internal mechanics of each method really show their limits. Grad-CAM goes haywire and starts throwing random patches of noise all over the place because it is forcing a top-down gradient search for a class that isn't actually there. Occlusion sensitivity breaks down differently: it turns into a flat or completely random grid because covering up pieces of an image the model has never seen before doesn't change the forced closed-world Softmax probabilities in any logical way.
+
+- Can one explanation method completely replace another?
+  No, they are actually complementary tools. Grad-CAM shows us what internal features the convolutional layers are actively "looking at" during the process. Occlusion sensitivity, however, measures a direct cause-and-effect relationship—it shows how much the final prediction actually hurts if you physically delete a piece of the image. A region could easily capture a lot of attention in Grad-CAM but not be critical in the occlusion map. Using both together is the only real way to properly audit how the model behaves.

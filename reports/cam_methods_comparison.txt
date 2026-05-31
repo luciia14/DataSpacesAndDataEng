@@ -1,0 +1,20 @@
+CAM METHODS COMPARISON ANALYSIS
+==============================
+
+- Do all CAM methods highlight the same image regions?
+  No, not strictly. While all four methods agree that the core features of interest are located around the center and right-center of the patch, their spatial distribution varies significantly. GradCAM and HiResCAM lock onto a specific diagonal boundary structure, whereas EigenCAM and LayerCAM shift their peak attention upwards and expand over a wider surface area.
+
+- Which method produces the sharpest visualization?
+  LayerCAM produces the sharpest and most granular visualization. It captures fine-grained spatial details and shows smaller, pixel-level variations in the heatmap (including a small secondary activation peak in the bottom-left corner) rather than a giant blob.
+
+- Which method produces the smoothest visualization?
+  GradCAM (closely followed by HiResCAM) produces the smoothest visualization. It generates a uniform, continuous gradient blob that transitions gently from cold blue to hot red without sudden structural breaks.
+
+- Which method appears easiest to interpret?
+  GradCAM is the easiest to interpret for general evaluation because its clean geometric shape clearly outlines the main boundary where the model's visual reasoning takes place, avoiding the visual noise or scattered artifacts found in other methods.
+
+- Do any methods produce suspicious or unexpected attention?
+  Yes, LayerCAM and EigenCAM. EigenCAM completely ignores the bottom-left features and shifts focus entirely to the upper section. LayerCAM presents a suspicious secondary activation spot in the bottom-left corner over a localized bright pixel group, suggesting it might be over-sensitive to high-frequency image textures or minor local reflections.
+
+- What does this suggest about relying on only one XAI method?
+  It proves that relying on a single XAI method is a significant engineering risk. Different CAM algorithms use distinct mathematical operations to compute feature importance (some rely purely on gradients, some on activations, and others on principal components). If you only audit your model with GradCAM, you might assume its reasoning is perfectly smooth and centralized; however, checking LayerCAM reveals that the network is also tracking smaller, potentially irrelevant background artifacts. Utilizing a multi-CAM suite is essential to establish a reliable explainability consensus in operational systems.

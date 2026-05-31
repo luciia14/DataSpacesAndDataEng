@@ -1,0 +1,17 @@
+TRANSFORMATION SENSITIVITY ANALYSIS
+===================================
+
+- Did confidence change?
+  Yes, confidence shifted across all experiments. Spatial changes like Horizontal Flip and Rotation 90 actually caused a minor increase in confidence (rising from 0.5718 to 0.6371 and 0.6124). However, pixel-level alterations degraded the model's certainty, with Gaussian Blur dropping confidence to 0.5154, while extreme brightness and noise completely tanked the original river prediction.
+
+- Did attention regions move?
+  For spatial transformations (flip and rotation), the attention regions moved coherently, following the structural orientation of the river path, which confirms the feature maps possess basic translation and rotation equivariance. For Gaussian Blur, the attention field diffused slightly but remained on target. However, for high brightness and noise, the attention regions broke down entirely, shifting away from the water channel to lock onto artifactual textures in the background.
+
+- Which transformations had the largest impact?
+  High Brightness and Gaussian Noise had the most catastrophic impact. High Brightness caused a false positive, misclassifying the river as 'residential' (45.59% confidence) likely because the oversaturated pixels mimic bright concrete or roofs. Gaussian Noise forced an incorrect 'forest' prediction (55.29% confidence) because the high-frequency pixel variations destroyed the smooth gradient of the water body and created a pseudo-texture resembling dense tree canopies.
+
+- Which transformations had minimal impact?
+  Horizontal Flip, Rotation 90, and Gaussian Blur had a minimal negative impact. The network correctly maintained the 'river' label for all three, proving that the model is highly resilient to geometric alterations and light atmospheric blurring.
+
+- Does the model appear robust?
+  Only partially. The model is robust against spatial changes and minor blurring, which is standard for CNN architecture. However, it shows a severe vulnerability to pixel-level distribution shifts like changes in lighting and sensor noise. This highlights a clear engineering risk: deploying this closed-world model into production without data augmentation techniques (such as random brightness variations and noise injection during training) would make it unreliable under changing real-world satellite conditions.

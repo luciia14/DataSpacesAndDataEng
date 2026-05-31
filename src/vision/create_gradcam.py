@@ -1,246 +1,148 @@
 from pathlib import Path
-import numpy as np
 import torch
 from torch import nn
-from torchvision import transforms, models
+from torchvision import models, transforms
+import torchvision.transforms.functional as TF
 from PIL import Image
 import matplotlib.pyplot as plt
+import numpy as np
+from pytorch_grad_cam import GradCAM, HiResCAM, EigenCAM, LayerCAM
+from pytorch_grad_cam.utils.image import show_cam_on_image
 
-# Configuración
+# Configuración de Rutas
 MODEL_PATH = Path("models/resnet18_transfer.pt")
 CLASS_NAMES_PATH = Path("models/resnet18_classes.txt")
 
-# Lista con las 3 rutas de imágenes para procesar en lote
-IMAGE_PATHS = [
-    Path("data/processed/images/test/river/river_0000.jpg"),
-    Path("data/processed/images/test/forest/forest_0000.jpg"),
-    Path("data/processed/images/test/residential/residential_0000.jpg")
-]
-
-# Task 2: Load Class Names
+# Task 5: Load Trained Model
 def load_class_names():
-    if not CLASS_NAMES_PATH.exists():
-        print(f"Error: class file not found: {CLASS_NAMES_PATH}")
-        print("Train the transfer model first.")
-        raise SystemExit(1)
-        
-    with open(CLASS_NAMES_PATH, "r") as f:
+    with open(CLASS_NAMES_PATH) as f:
         class_names = [
             line.strip()
-            for line in f.readlines()
+            for line in f
             if line.strip()
         ]
     return class_names
 
-# Task 3: Load the Model
 def load_model(class_names):
-    if not MODEL_PATH.exists():
-        print(f"Error: model file not found: {MODEL_PATH}")
-        print("Train the transfer model first.")
-        raise SystemExit(1)
-        
     model = models.resnet18(weights=None)
-    
     input_features = model.fc.in_features
-    model.fc = nn.Linear(
-        input_features,
-        len(class_names)
-    )
+    model.fc = nn.Linear(input_features, len(class_names))
     
-    state_dict = torch.load(
-        MODEL_PATH,
-        map_location="cpu"
-    )
+    state_dict = torch.load(MODEL_PATH, map_location="cpu")
     model.load_state_dict(state_dict)
     model.eval()
     return model
 
-# Task 4: Prepare Image
+# Task 6: Load Image
 def load_image(image_path):
-    if not image_path.exists():
-        print(f"Error: image not found: {image_path}")
-        raise SystemExit(1)
-        
+    image = Image.open(image_path).convert("RGB")
     transform = transforms.Compose([
         transforms.Resize((224, 224)),
-        transforms.ToTensor(),
-        transforms.Normalize(
-            mean=[0.485, 0.456, 0.406],
-            std=[0.229, 0.224, 0.225]
-        )
+        transforms.ToTensor()
     ])
-    
-    display_transform = transforms.Compose([
-        transforms.Resize((224, 224))
-    ])
-    
-    with Image.open(image_path) as image:
-        image = image.convert("RGB")
-        display_image = display_transform(image)
-        image_tensor = transform(image)
-        image_tensor = image_tensor.unsqueeze(0)
-        
-    return image_tensor, display_image 
+    tensor = transform(image)
+    return image, tensor.unsqueeze(0)
 
-# Task 5: Create Grad-CAM Helper Class
-class GradCAM:
-    def __init__(self, model, target_layer):
-        self.model = model
-        self.target_layer = target_layer
-        self.activations = None
-        self.gradients = None
-        
-        self.forward_hook = target_layer.register_forward_hook(
-            self.save_activations
-        )
-        self.backward_hook = target_layer.register_full_backward_hook(
-            self.save_gradients
-        )
-        
-    def save_activations(self, module, input_data, output_data):
-        self.activations = output_data.detach()
-        
-    def save_gradients(self, module, grad_input, grad_output):
-        self.gradients = grad_output[0].detach()
-        
-    def generate(self, image_tensor, target_class_index):
-        self.model.zero_grad()
-        outputs = self.model(image_tensor)
-        score = outputs[0, target_class_index]
-        score.backward()
-        
-        gradients = self.gradients[0]
-        activations = self.activations[0]
-        
-        weights = gradients.mean(dim=(1, 2))
-        
-        cam = torch.zeros(
-            activations.shape[1:],
-            dtype=torch.float32
-        )
-        
-        for channel_index, weight in enumerate(weights):
-            cam += weight * activations[channel_index]
-            
-        cam = torch.relu(cam)
-        cam = cam - cam.min()
-        
-        if cam.max() > 0:
-            cam = cam / cam.max()
-            
-        return cam.numpy()
-        
-    def close(self):
-        self.forward_hook.remove()
-        self.backward_hook.remove()
-
-# Task 6: Predict the Image
+# Task 7: Generate Prediction
 def predict(model, image_tensor, class_names):
     with torch.no_grad():
         outputs = model(image_tensor)
-        probabilities = torch.softmax(
-            outputs,
-            dim=1
-        )
-        confidence, predicted_index = torch.max(
-            probabilities,
-            dim=1
-        )
-        predicted_class = class_names[
-            predicted_index.item()
-        ]
-    return predicted_index.item(), predicted_class, confidence.item()
+        probabilities = torch.softmax(outputs, dim=1)
+        confidence, predicted = torch.max(probabilities, dim=1)
+        predicted_class = class_names[predicted.item()]
+        
+    print(f"Prediction: {predicted_class} | Confidence: {confidence.item():.4f}")
+    return predicted_class, confidence.item()
 
-# Task 7: Save Grad-CAM Visualization
-def save_gradcam_visualization(display_image, cam, predicted_class, confidence, output_path):
-    image_array = np.array(display_image)
+# Task 8: Generate Grad-CAM Heatmap
+def create_heatmap(model, image_tensor):
+    target_layers = [model.layer4[-1]]
+    cam = GradCAM(model=model, target_layers=target_layers)
+    grayscale_cam = cam(input_tensor=image_tensor)
+    return grayscale_cam[0]
+
+# Task 9: Visualize and Save Transform Pair
+def visualize_transformation(original_img, transformed_tensor, heatmap, transform_name, output_path):
+    # Convertir el tensor transformado de vuelta a imagen PIL para visualizar el fondo original real
+    # Deshacemos el batch dimension y pasamos a numpy HWC
+    t_np = transformed_tensor.squeeze(0).permute(1, 2, 0).cpu().numpy()
+    t_np = np.clip(t_np, 0, 1) # Asegurar rango válido [0, 1]
     
-    cam_image = Image.fromarray(
-        np.uint8(cam * 255)
-    )
-    cam_image = cam_image.resize(
-        display_image.size
-    )
-    cam_resized = np.array(cam_image) / 255.0
+    visualization = show_cam_on_image(t_np, heatmap, use_rgb=True)
     
-    figure, axes = plt.subplots(
-        1,
-        3,
-        figsize=(12, 4)
-    )
+    plt.figure(figsize=(10, 5))
+    plt.subplot(1, 2, 1)
+    plt.imshow(t_np)
+    plt.title(f"Transformed: {transform_name}")
+    plt.axis("off")
     
-    axes[0].imshow(image_array)
-    axes[0].set_title("Original image")
-    axes[0].axis("off")
-    
-    axes[1].imshow(cam_resized, cmap="jet")
-    axes[1].set_title("Grad-CAM heatmap")
-    axes[1].axis("off")
-    
-    axes[2].imshow(image_array)
-    axes[2].imshow(
-        cam_resized,
-        cmap="jet",
-        alpha=0.45
-    )
-    axes[2].set_title(
-        f"Prediction: {predicted_class}\n"
-        f"Confidence: {confidence:.2f}"
-    )
-    axes[2].axis("off")
+    plt.subplot(1, 2, 2)
+    plt.imshow(visualization)
+    plt.title(f"Grad-CAM ({transform_name})")
+    plt.axis("off")
     
     plt.tight_layout()
-    output_path.parent.mkdir(
-        parents=True,
-        exist_ok=True
-    )
+    output_path.parent.mkdir(parents=True, exist_ok=True)
     plt.savefig(output_path)
     plt.close()
-    print(f"Saved Grad-CAM visualization: {output_path}")
+    print(f"Saved visualization: {output_path}")
 
-# Task 8: Add Main Function (with loop for multiple images)
+# Task 10 / Independent Task 2: Main Function
 def main():
     class_names = load_class_names()
     model = load_model(class_names)
     
-    # Recorremos cada imagen de la lista de configuración
-    for image_path in IMAGE_PATHS:
-        image_tensor, display_image = load_image(image_path)
+    # Imagen de referencia (usamos river_0000 como base, puedes cambiarla si quieres)
+    base_image_path = Path("data/processed/images/test/river/river_0000.jpg")
+    
+    if not base_image_path.exists():
+        print(f"Error: Base image not found at {base_image_path}")
+        return
         
-        predicted_index, predicted_class, confidence = predict(
-            model,
-            image_tensor,
-            class_names
-        )
+    print(f"--- INDEPENDENT TASK 2: IMAGE TRANSFORMATION SENSITIVITY ---")
+    print(f"Base Image: {base_image_path}\n")
+    
+    # 1. Carga original limpia
+    orig_img, orig_tensor = load_image(base_image_path)
+    
+    # Definimos las diferentes transformaciones aplicadas directamente al tensor base [1, 3, 224, 224]
+    # Clonamos para no pisar memoria entre experimentos
+    transformations = {}
+    
+    # Original
+    transformations["Original"] = orig_tensor.clone()
+    
+    # Horizontal Flip
+    transformations["Horizontal_Flip"] = TF.hflip(orig_tensor.clone())
+    
+    # Rotation 90 degrees
+    transformations["Rotation_90"] = TF.rotate(orig_tensor.clone(), angle=90)
+    
+    # Gaussian Blur (kernel_size=11, sigma=3.0)
+    transformations["Gaussian_Blur"] = TF.gaussian_blur(orig_tensor.clone(), kernel_size=[11, 11], sigma=[3.0, 3.0])
+    
+    # Brightness Adjustment (Factor 1.7 -> Más brillante)
+    transformations["High_Brightness"] = TF.adjust_brightness(orig_tensor.clone(), brightness_factor=1.7)
+    
+    # Additional Random Noise (Gaussian Noise)
+    noise_tensor = orig_tensor.clone()
+    noise = torch.randn_like(noise_tensor) * 0.15 # Magnitud del ruido aleatorio
+    transformations["Gaussian_Noise"] = torch.clamp(noise_tensor + noise, 0.0, 1.0)
+
+    # Bucle para ejecutar predicción y Grad-CAM sobre cada una de las mutaciones
+    for t_name, t_tensor in transformations.items():
+        print(f"Executing experiment for mutation: {t_name}")
         
-        print("\n=== Grad-CAM Explanation ===")
-        print(f"Image: {image_path}")
-        print(f"Predicted class: {predicted_class}")
-        print(f"Confidence: {confidence:.4f}")
+        # Ejecutar inferencia
+        pred_class, conf_score = predict(model, t_tensor, class_names)
         
-        gradcam = GradCAM(
-            model=model,
-            target_layer=model.layer4
-        )
+        # Generar su mapa de calor correspondiente
+        heatmap = create_heatmap(model, t_tensor)
         
-        cam = gradcam.generate(
-            image_tensor=image_tensor,
-            target_class_index=predicted_index
-        )
-        gradcam.close()
-        
-        # Generamos un nombre único usando la carpeta y el nombre del archivo
-        # Ejemplo: reports/gradcam_river_river_0000.png
-        output_name = f"gradcam_{image_path.parent.name}_{image_path.name}"
-        dynamic_output_path = Path("reports") / output_name
-        
-        save_gradcam_visualization(
-            display_image=display_image,
-            cam=cam,
-            predicted_class=predicted_class,
-            confidence=confidence,
-            output_path=dynamic_output_path
-        )
+        # Guardar la gráfica comparativa con sufijo dinámico
+        output_path = Path(f"reports/gradcam_examples/transformation_{base_image_path.stem}_{t_name}.png")
+        visualize_transformation(orig_img, t_tensor, heatmap, t_name, output_path)
+        print("-" * 60)
 
 if __name__ == "__main__":
     main()

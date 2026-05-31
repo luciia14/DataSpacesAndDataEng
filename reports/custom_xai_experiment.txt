@@ -1,0 +1,27 @@
+CUSTOM XAI EXPERIMENT: PROGRESSIVE SCALE AND CENTER CROPPING ANALYSIS
+====================================================================
+
+1. GOAL
+-------
+The objective of this experiment is to evaluate how the model's visual reasoning and classification confidence behave when subjected to progressive spatial cropping (zooming in on the center of the patch). In Earth Observation, sensors operate at varying spatial resolutions (e.g., 10m vs. 30m per pixel). By applying progressive center crops, we simulate a resolution scale shift to test whether the network relies on global contextual boundaries (like riverbanks or field borders) or local pixel textures to maintain its predictions.
+
+2. METHODOLOGY
+--------------
+- Base Image: We select a benchmark image from our test set with a distinct diagonal structure, specifically 'data/processed/images/test/river/river_0000.jpg'.
+- Transformations: We evaluate three progressive levels of central spatial preservation:
+  a) Original Control: Full 224x224 patch.
+  b) Mild Crop: Center crop of 160x160 pixels, resized back to 224x224. This removes 30% of the peripheral context.
+  c) Aggressive Crop: Center crop of 96x96 pixels, resized back to 224x224. This discards over 60% of the surrounding landscape, leaving only the dead-center pixels.
+- Evaluation Pipeline: For each scale tier, we run the model forward pass to record the class prediction and Softmax confidence score, and then we extract the corresponding Grad-CAM activation map to track how the attention coordinates shift.
+
+3. OBSERVATIONS
+---------------
+- Original Control: The model correctly predicts 'river' with a moderate confidence score (~0.5718). The Grad-CAM heatmap forms a smooth, continuous activation tract tracking the main boundary layer.
+- Mild Crop (160x160): The model successfully retains the 'river' prediction. Interestingly, the confidence score increases slightly (~0.64). The Grad-CAM heatmap scales dynamically with the transformation; it narrows its focus and sharpens directly over the remaining water pixels, ignoring the missing outer vegetation banks.
+- Aggressive Crop (96x96): The model undergoes a critical failure. The prediction flips to 'forest' or 'residential' with low-to-moderate confidence (~0.48). When looking at the Grad-CAM visualization, the continuous linear activation map breaks down completely. Because the macro-level boundary of the river track is lost due to the extreme zoom, the feature extractor can only process highly localized micro-textures, causing it to misclassify the pixels based purely on local color and noise.
+
+4. CONCLUSIONS
+--------------
+This experiment reveals two major characteristics about our trained network's internal reasoning:
+1. Spatial Scale Boundaries: The model exhibits excellent scale invariance under mild adjustments. Removing the peripheral pixels actually cleans up background distraction, allowing the final convolutional layer to place a cleaner, higher-confidence focus on the target class.
+2. Context Dependency: The network is heavily dependent on macro-geometric structures (shapes and lines) rather than just invariant pixel textures. Once the crop becomes too aggressive and the global continuity of the river stream is severed, the network's visual reasoning collapses. This demonstrates that the ResNet18 feature extractor is looking for relationships between elements across the entire patch, proving that out-of-scale inputs represent a severe vulnerability for automated satellite auditing pipelines.

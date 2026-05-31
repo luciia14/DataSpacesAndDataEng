@@ -1,0 +1,46 @@
+GRAD-CAM ANALYSIS
+=================
+
+TEST CASE 1: RIVER IMAGES
+-------------------------
+Path: data/processed/images/test/river/river_0000.jpg
+Prediction: river
+Confidence: 0.5718
+Observed attention:
+The Grad-CAM heatmap outlines the winding, continuous linear pixels that follow the water body's actual path. However, the activation spread is somewhat diffuse, shifting focus slightly toward portions of the riverbanks and adjacent vegetation.
+Interpretation:
+The relatively low confidence score (57.18%) correlates directly with the diffuse attention map. The model recognizes the main geographic feature (the water body) but is partially distracted by the contextual pixel variations on the margins, leading to lower classification certainty.
+
+TEST CASE 2: FOREST IMAGES
+--------------------------
+Prediction: forest
+Confidence: 0.7601
+Observed attention:
+The model demonstrates concentrated attention on regions with high-frequency, dark green pixel clusters representing dense canopy coverage. It effectively ignores open patches or clearings within the scene.
+Interpretation:
+A strong confidence of 76.01% is achieved because the pre-trained feature extractor successfully matches the structural texture of the dense vegetation with its internal ImageNet primitive features, locking firmly onto the correct ecological class.
+
+TEST CASE 3: RESIDENTIAL IMAGES
+-------------------------------
+Prediction: residential
+Confidence: 0.9883
+Observed attention:
+The heatmap isolates high-contrast geometric structures with sharp edges, specifically pointing at rooftops, paved surfaces, and grid-like street layouts. Surrounding green yards or background terrain are completely ignored.
+Interpretation:
+The near-perfect confidence (98.83%) aligns with precise attention targeting. Man-made urban environments offer highly distinct, high-contrast geometric primitives that the deep convolutional layers can easily map with absolute mathematical certainty.
+
+
+CONCLUSIONS
+===========
+
+- Did the model focus on meaningful regions?
+  Yes. For standard in-distribution images (forest, river, residential), Grad-CAM confirms that the network systematically tracks correct spatial indicators, such as canopy textures for forests, linear flow lines for rivers, and geometric boundaries for residential sectors.
+
+- Did suspicious predictions appear?
+  Yes, primarily during out-of-distribution (OOD) tests with noise or unknown classes. The model forces false predictions on random artifacts with moderate confidence while exhibiting scattered heatmaps, demonstrating that closed-world models will silently hallucinate known labels on alien data.
+
+- Can explainability guarantee correctness?
+  No. Explainability (XAI) does not fix or guarantee the mathematical correctness of a model's prediction; it merely provides transparency into *why* a decision was reached. A model can confidently make a wrong decision based on a flawed pixel correlation, and Grad-CAM simply unmasks that specific flaw.
+
+- Why is XAI important in operational systems?
+  In mission-critical Earth Observation frameworks, XAI acts as a defensive engineering tool. It allows human operators to audit model reasoning, discover silent data corruption, verify robustness against background shortcuts, and safely deploy automated pipelines by understanding exactly when a model's visual logic is failing.
